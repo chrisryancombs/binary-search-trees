@@ -1,11 +1,19 @@
 import java.util.NoSuchElementException;
 
-public class BinarySearchTree<K extends Comparable<K>, E>  implements IBinarySearchTree<K,E>
+import javafx.scene.Parent;
+
+// Rules of a red black tree:
+// Every node is red or black
+// Root is always black
+// Red nodes can't have red parents or children
+// There is the same number of black nodes from root to a null node
+
+public class RedBlackTree<K extends Comparable<K>, E>  implements IBinarySearchTree<K,E>
 {
 	int numNodes; // Number of nodes in tree total
 	Node root; // First node, root of our tree
 	
-	public BinarySearchTree(){
+	public RedBlackTree(){
 		numNodes = 0;
 		root = null;
 	}
@@ -18,6 +26,7 @@ public class BinarySearchTree<K extends Comparable<K>, E>  implements IBinarySea
     	{
     		root = newNode;
     		numNodes++;
+    		balance(newNode);
     	} else { // Otherwise, we have to search for where to place it
     		Node current = root;
     		Node parent;
@@ -32,6 +41,7 @@ public class BinarySearchTree<K extends Comparable<K>, E>  implements IBinarySea
     					parent.leftChild = newNode; // Set left node and finish
     					newNode.parent = parent;
     					numNodes++;
+    					balance(newNode);
     					return;
     				}
     			} else { // If not, pick right node
@@ -41,11 +51,138 @@ public class BinarySearchTree<K extends Comparable<K>, E>  implements IBinarySea
     					parent .rightChild = newNode; // Set right node and finish
     					newNode.parent = parent;
     					numNodes++;
+    					balance(newNode);
     					return;
     				}
     			}
     		}
     	}
+    }
+    
+    public void balance(Node n)
+    {
+    	Node grandpa = null;
+		Node uncle = null;
+		Node parent = n.parent;
+		
+    	if(n == root) // Simple fix, set root to black
+    	{
+    		n.setBlack();
+    		return;
+    	}
+    	
+    	if(parent.color == "Black") // No problems
+    	{
+    		return;
+    	} else {
+    		
+    		if(parent == root) // If child of root
+    		{
+    			grandpa = null; // There is no grandpa
+    			uncle = null; // There is no uncle
+    		} else {
+    			grandpa = parent.parent; // Otherwise set grandparent
+    			
+    			if(grandpa.leftChild == parent) // Check left or right
+    			{
+    				uncle = grandpa.rightChild; // Set uncle
+    			} else {
+    				uncle = grandpa.leftChild;
+    			}
+    	
+    		}
+    		
+    		//AND NOW WE BEGIN THE CHECKS
+    		if(uncle != null) // Non-null uncle also means non-null grandpa
+    		{
+    			if(uncle.color == "Red") // CASE 1
+        		{
+        			grandpa.setRed();
+        			parent.setBlack();
+        			uncle.setBlack();
+        			balance(grandpa);
+        			return;
+        			
+        		}	
+    			
+    			if(uncle.color == "Black") // Case 2 or 3
+    			{
+    				
+    				if(n == parent.leftChild) // Case 2: If the node is the left child...
+    				{
+    					if(parent == grandpa.rightChild) // ...of a right child 
+    					{
+    						parent.rightChild = n; // Move it to the other side of its parent
+    						parent.leftChild = null; // And delete the old one
+
+    						balance(grandpa);
+    						return;
+    					}
+    				}
+    				
+    				if(n == parent.rightChild) // Case 2: If the node is the right child...
+    				{
+    					if(parent == grandpa.leftChild) // ...of a left child 
+    					{
+    						parent.leftChild = n; // Move it to the other side of its parent
+    						parent.rightChild = null; // And delete the old one
+
+    						balance(grandpa);
+    						return;
+    					}
+    				}
+    				System.out.println("a");
+    				// Note: Case 2 just turns it into a case 3
+    				
+    				if(n == parent.rightChild)
+    				{
+    					if(parent == grandpa.rightChild)
+    					{
+    						parent.leftChild = grandpa;
+    						parent.parent = grandpa.parent;
+    						parent.setBlack();
+    						grandpa.parent = parent;
+    						grandpa.setRed();
+    						if(grandpa == root)
+    						{
+    							root = parent;
+    						}
+    						
+    						balance(grandpa);
+    						return;
+    					}
+    				
+    				}
+    				
+    				if(n == parent.leftChild)
+    				{
+    					if(parent == grandpa.leftChild)
+    					{
+    						
+    						parent.rightChild = grandpa;
+    						parent.parent = grandpa.parent;
+    						parent.setBlack();
+    						grandpa.parent = parent;
+    						grandpa.setRed();
+    						
+    						if(grandpa == root)
+    						{
+    							root = parent;
+    						}
+    						
+    						balance(grandpa);
+    						return;
+    					}
+    				
+    				}
+    					
+    					
+    			}
+    			
+    		}
+    		
+    	}
+    		
     }
 
     public E get(K key)
@@ -167,7 +304,7 @@ public class BinarySearchTree<K extends Comparable<K>, E>  implements IBinarySea
     	}
     	
     	
-    	return ("[" +keyString + ", " + leftString + ", " + rightString + "]");
+    	return ("["  + root.color + ", " +keyString + ", " + leftString + ", " + rightString + "]");
     }
     
     private String getTreeStringRecursive(Node n)
@@ -196,15 +333,16 @@ public class BinarySearchTree<K extends Comparable<K>, E>  implements IBinarySea
     	}
     	
     	
-    	return ("[" +keyString + ", " + leftString + ", " + rightString + "]");
+    	return ("[" + n.color + ", " +keyString + ", " + leftString + ", " + rightString + "]");
     }
 	
     private class Node<K extends Comparable<K>,E>{
     	K key;
-    	E element;
-    	Node parent;
-    	Node leftChild;
-    	Node rightChild;
+    	E element; // Item being held
+    	Node parent; // Node above this one
+    	Node leftChild; // Child to the left
+    	Node rightChild; // child to the right
+    	String color; // Red or black
     	public Node(K key, E element)
     	{
     		this.key = key;
@@ -212,11 +350,24 @@ public class BinarySearchTree<K extends Comparable<K>, E>  implements IBinarySea
     		this.parent = null;
     		this.leftChild = null;
     		this.rightChild = null;
+    		this.color = "Red";
     		
     	}
     	public String toString()
     	{
     		return key.toString();
     	}
+    	
+    	public void setBlack()
+    	{
+    		this.color = "Black";
+    	}
+    	
+    	public void setRed()
+    	{
+    		this.color = "Red";
+    	}
+    	
+    
     }
 }
