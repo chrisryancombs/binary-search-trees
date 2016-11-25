@@ -3,6 +3,7 @@ import java.util.NoSuchElementException;
 import javafx.scene.Parent;
 
 // Rules of a red black tree:
+// Dont talk about red-black trees
 // Every node is red or black
 // Root is always black
 // Red nodes can't have red parents or children
@@ -68,16 +69,15 @@ public class RedBlackTree<K extends Comparable<K>, E>  implements IBinarySearchT
 		
     	if(n == root) // Simple fix, set root to black
     	{
-    		System.out.println("set root as black");
     		n.setBlack();
     		return;
     	}
     	
     	if(parent.color == "Black") // No problems
     	{
-    		System.out.println("noprobs black parent");
     		return;
     	} else { // If not, we need to set variables and make some changes
+    		n.setRed();
     		if(parent == root) // If child of root
     		{
     			grandpa = null; // There is no grandpa
@@ -91,142 +91,153 @@ public class RedBlackTree<K extends Comparable<K>, E>  implements IBinarySearchT
     			} else {
     				uncle = grandpa.leftChild;
     			}
+    			
+    			//BEGIN THE CHECKS
+    			if(uncle != null && uncle.color == "Red") // Red parent, red uncle, CASE 1
+    			{
+    				case1(n, parent, uncle, grandpa);
+    				return;
+    			}
+    			
+    			if(uncle == null || uncle.color == "Black")
+    			{
+    				if(n == parent.leftChild && parent == grandpa.rightChild) // Left child of right child, CASE 2
+    				{
+    					case2(n, parent, uncle, grandpa);
+    					return;
+    				}
+    				
+    				if(n == parent.rightChild && parent == grandpa.leftChild) // Right child of left child, CASE 2
+    				{
+    					case3(n, parent, uncle, grandpa);
+    					return;
+    				}
+    				
+    				if( n == parent.rightChild && parent == grandpa.rightChild) // Right child of right child, CASE 3
+    				{
+    					case4(n, parent, uncle, grandpa);
+    					return;
+    				}
+    				
+    				if( n == parent.leftChild && parent == grandpa.leftChild) // Left child of left child, CASE 3
+    				{
+    					case5(n, parent, uncle, grandpa);
+    					return;
+    				}
+    			}
     	
     		}
-    		
-    		//AND NOW WE BEGIN THE CHECKS
-    		if(uncle != null && uncle.color == "Red") // CASE 1
-    		{
-    			System.out.println("case 1: " + n.toString());
-				if(grandpa.color == "Black")
-				{
-        			grandpa.setRed();	
-				} else {
-					grandpa.setBlack();
-				}
-				
-				if(parent.color == "Black")
-				{
-					parent.setRed();
-				} else {
-					parent.setBlack();
-				}
-    			uncle.setBlack();
-    			balance(grandpa);
-    			return;
-    			
-    		}	
-			
-			if(uncle == null || uncle.color == "Black") // Case 2 or 3
-			{
-				
-				if(n == parent.leftChild) // Case 2: If the node is the left child...
-				{
-					if(parent == grandpa.rightChild) // ...of a right child 
-					{
-						System.out.println("case 2: " + n.toString());
-						parent.leftChild = n.rightChild;
-						if(n.rightChild != null){ n.rightChild.parent = parent; }
-						
-						n.rightChild = parent;
-						parent.parent = n;
-						
-						grandpa.rightChild = n;
-						n.parent = grandpa;
-
-						balance(parent);
-						return;
-					}
-				}
-				
-				if(n == parent.rightChild) // Case 2: If the node is the right child...
-				{
-					if(parent == grandpa.leftChild) // ...of a left child 
-					{
-						System.out.println("case 2: " + n.toString());
-						parent.rightChild = n.leftChild;
-						n.leftChild.parent = parent;
-						
-						n.leftChild = parent;
-						parent.parent = n;
-						
-						grandpa.leftChild = n;
-						n.parent = grandpa;
-
-						balance(parent);
-						return;
-					}
-				}
-				System.out.println("a");
-				// Note: Case 2 just turns it into a case 3
-				
-				if(n == parent.rightChild)
-				{
-					if(parent == grandpa.rightChild)
-					{
-						System.out.println("case3: " + n.toString());
-						
-						grandpa.rightChild = parent.leftChild;
-						if(parent.leftChild != null){ parent.leftChild.parent = grandpa;}
-						
-						
-						parent.parent = grandpa.parent;
-						if(grandpa.parent.leftChild != null)
-						{
-							if(grandpa == grandpa.parent.leftChild)
-							{
-								grandpa.parent.leftChild = parent;
-							}
-						}
-						 else if(grandpa.parent.rightChild != null) {
-							grandpa.parent.rightChild = parent;
-						}
-						
-						parent.leftChild = grandpa;
-						grandpa.parent = parent;
-						
-						parent.setBlack();
-						
-						grandpa.setRed();
-						if(grandpa == root)
-						{
-							root = parent;
-						}
-						
-						
-						return;
-					}
-				
-				}
-				
-				if(n == parent.leftChild)
-				{
-					if(parent == grandpa.leftChild)
-					{
-						System.out.println("case 3: " + n.toString());
-						grandpa.leftChild = parent.rightChild;
-						parent.rightChild = grandpa;
-						parent.parent = grandpa.parent;
-						parent.setBlack();
-						grandpa.parent = parent;
-						grandpa.setRed();
-						
-						if(grandpa == root)
-						{
-							root = parent;
-						}
-						
-						balance(grandpa);
-						return;
-					}
-				
-				}
-			
-			}
     		
     	}
     		
     }
+    private void case1(Node n, Node parent, Node uncle, Node grandpa)
+    {
+    	if(grandpa.color == "Red"){ grandpa.setBlack();} // Changes grandpa's color
+    	else { grandpa.setRed();}
+    	
+    	if(parent.color == "Red"){ parent.setBlack();} // Changes parent's color
+    	else { parent.setRed();}
+    	uncle.setBlack(); // Set uncle to black
+    	balance(grandpa); // Continue balancing
+    }
+    
+    private void case2(Node n, Node parent, Node uncle, Node grandpa)
+    {
+    	parent.leftChild = n.rightChild;
+    	if(n.rightChild != null){ n.rightChild.parent = parent;} // Give n's child to parent
+    	
+    	n.rightChild = parent; // Parent becomes n's child
+    	parent.parent = n;
+    	
+    	grandpa.rightChild = n; // Grandpa becomes n's parent
+    	n.parent = grandpa;
+    	
+    	balance(parent); // Continue balancing
+    }
+    
+    private void case3(Node n, Node parent, Node uncle, Node grandpa)
+    {
+    	parent.rightChild = n.leftChild;
+    	if(n.leftChild != null){ n.leftChild.parent = parent;} // Give n's child to parent
+    	
+    	n.leftChild = parent; // Parent becomes n's child
+    	parent.parent = n;
+    	
+    	grandpa.leftChild = n; // Grandpa becomes n's parent
+    	n.parent = grandpa;
+    	
+    	balance(parent); // Continue balancing
+    }
+    
+    private void case4( Node n, Node parent, Node uncle, Node grandpa) // Rotate left
+    {
+    	grandpa.rightChild = parent.leftChild; // Grandpa inherits parents child
+    	if(parent.leftChild != null) {parent.leftChild.parent = grandpa;}
+		
+    	parent.parent = grandpa.parent;// Grandpa's parent  becomes parent's parent
+    	if(grandpa.parent != null)
+		{
+			if(grandpa == grandpa.parent.leftChild)
+			{
+				grandpa.parent.leftChild = parent;
+			}
+			if(grandpa == grandpa.parent.rightChild)
+			{
+				grandpa.parent.rightChild = parent;
+			}
+		}
+		
+		parent.leftChild = grandpa; // Grandpa becomes parent's child
+		grandpa.parent = parent;
+		
+		String tempColor = parent.color; // Swap colors
+		parent.color = grandpa.color;
+		grandpa.color = tempColor;
+		
+		if(grandpa == root) // if need be, set new root
+		{
+			root = parent;
+		}
+		
+		balance(n); // Continue balancing
+    	
+	}
+    
+    private void case5( Node n, Node parent, Node uncle, Node grandpa) // Rotate right
+    {
+    	grandpa.leftChild = parent.rightChild;
+    	if(parent.rightChild != null) {parent.rightChild.parent = grandpa;} // Grandpa inherits parent's child
+		
+    	parent.parent = grandpa.parent; // Grandpa's parent  becomes parent's parent
+    	if(grandpa.parent != null)
+		{
+			if(grandpa == grandpa.parent.rightChild)
+			{
+				grandpa.parent.rightChild = parent;
+			}
+			if(grandpa == grandpa.parent.leftChild)
+			{
+				grandpa.parent.leftChild = parent;
+			}
+		}
+		parent.rightChild = grandpa; // Grandpa becomes parent's child
+		grandpa.parent = parent;
+		
+		String tempColor = parent.color; // Swap colors
+		parent.color = grandpa.color;
+		grandpa.color = tempColor;
+		
+		
+		if(grandpa == root) // if need be, set new root
+		{
+			root = parent;
+		}
+		
+		balance(n); // Continue balancing
+    	
+	}
+    
 
     public E get(K key)
     {
