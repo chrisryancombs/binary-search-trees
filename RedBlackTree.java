@@ -24,6 +24,7 @@ public class RedBlackTree<K extends Comparable<K>, E>  implements IBinarySearchT
     	
     	if(root == null) // If this is out first node, set it as the root
     	{
+    		
     		root = newNode;
     		numNodes++;
     		balance(newNode);
@@ -67,15 +68,16 @@ public class RedBlackTree<K extends Comparable<K>, E>  implements IBinarySearchT
 		
     	if(n == root) // Simple fix, set root to black
     	{
+    		System.out.println("set root as black");
     		n.setBlack();
     		return;
     	}
     	
     	if(parent.color == "Black") // No problems
     	{
+    		System.out.println("noprobs black parent");
     		return;
-    	} else {
-    		
+    	} else { // If not, we need to set variables and make some changes
     		if(parent == root) // If child of root
     		{
     			grandpa = null; // There is no grandpa
@@ -93,93 +95,134 @@ public class RedBlackTree<K extends Comparable<K>, E>  implements IBinarySearchT
     		}
     		
     		//AND NOW WE BEGIN THE CHECKS
-    		if(uncle != null) // Non-null uncle also means non-null grandpa
+    		if(uncle != null && uncle.color == "Red") // CASE 1
     		{
-    			if(uncle.color == "Red") // CASE 1
-        		{
-        			grandpa.setRed();
-        			parent.setBlack();
-        			uncle.setBlack();
-        			balance(grandpa);
-        			return;
-        			
-        		}	
+    			System.out.println("case 1: " + n.toString());
+				if(grandpa.color == "Black")
+				{
+        			grandpa.setRed();	
+				} else {
+					grandpa.setBlack();
+				}
+				
+				if(parent.color == "Black")
+				{
+					parent.setRed();
+				} else {
+					parent.setBlack();
+				}
+    			uncle.setBlack();
+    			balance(grandpa);
+    			return;
     			
-    			if(uncle.color == "Black") // Case 2 or 3
-    			{
-    				
-    				if(n == parent.leftChild) // Case 2: If the node is the left child...
-    				{
-    					if(parent == grandpa.rightChild) // ...of a right child 
-    					{
-    						parent.rightChild = n; // Move it to the other side of its parent
-    						parent.leftChild = null; // And delete the old one
+    		}	
+			
+			if(uncle == null || uncle.color == "Black") // Case 2 or 3
+			{
+				
+				if(n == parent.leftChild) // Case 2: If the node is the left child...
+				{
+					if(parent == grandpa.rightChild) // ...of a right child 
+					{
+						System.out.println("case 2: " + n.toString());
+						parent.leftChild = n.rightChild;
+						if(n.rightChild != null){ n.rightChild.parent = parent; }
+						
+						n.rightChild = parent;
+						parent.parent = n;
+						
+						grandpa.rightChild = n;
+						n.parent = grandpa;
 
-    						balance(grandpa);
-    						return;
-    					}
-    				}
-    				
-    				if(n == parent.rightChild) // Case 2: If the node is the right child...
-    				{
-    					if(parent == grandpa.leftChild) // ...of a left child 
-    					{
-    						parent.leftChild = n; // Move it to the other side of its parent
-    						parent.rightChild = null; // And delete the old one
+						balance(parent);
+						return;
+					}
+				}
+				
+				if(n == parent.rightChild) // Case 2: If the node is the right child...
+				{
+					if(parent == grandpa.leftChild) // ...of a left child 
+					{
+						System.out.println("case 2: " + n.toString());
+						parent.rightChild = n.leftChild;
+						n.leftChild.parent = parent;
+						
+						n.leftChild = parent;
+						parent.parent = n;
+						
+						grandpa.leftChild = n;
+						n.parent = grandpa;
 
-    						balance(grandpa);
-    						return;
-    					}
-    				}
-    				System.out.println("a");
-    				// Note: Case 2 just turns it into a case 3
-    				
-    				if(n == parent.rightChild)
-    				{
-    					if(parent == grandpa.rightChild)
-    					{
-    						parent.leftChild = grandpa;
-    						parent.parent = grandpa.parent;
-    						parent.setBlack();
-    						grandpa.parent = parent;
-    						grandpa.setRed();
-    						if(grandpa == root)
-    						{
-    							root = parent;
-    						}
-    						
-    						balance(grandpa);
-    						return;
-    					}
-    				
-    				}
-    				
-    				if(n == parent.leftChild)
-    				{
-    					if(parent == grandpa.leftChild)
-    					{
-    						
-    						parent.rightChild = grandpa;
-    						parent.parent = grandpa.parent;
-    						parent.setBlack();
-    						grandpa.parent = parent;
-    						grandpa.setRed();
-    						
-    						if(grandpa == root)
-    						{
-    							root = parent;
-    						}
-    						
-    						balance(grandpa);
-    						return;
-    					}
-    				
-    				}
-    					
-    					
-    			}
-    			
-    		}
+						balance(parent);
+						return;
+					}
+				}
+				System.out.println("a");
+				// Note: Case 2 just turns it into a case 3
+				
+				if(n == parent.rightChild)
+				{
+					if(parent == grandpa.rightChild)
+					{
+						System.out.println("case3: " + n.toString());
+						
+						grandpa.rightChild = parent.leftChild;
+						if(parent.leftChild != null){ parent.leftChild.parent = grandpa;}
+						
+						
+						parent.parent = grandpa.parent;
+						if(grandpa.parent.leftChild != null)
+						{
+							if(grandpa == grandpa.parent.leftChild)
+							{
+								grandpa.parent.leftChild = parent;
+							}
+						}
+						 else if(grandpa.parent.rightChild != null) {
+							grandpa.parent.rightChild = parent;
+						}
+						
+						parent.leftChild = grandpa;
+						grandpa.parent = parent;
+						
+						parent.setBlack();
+						
+						grandpa.setRed();
+						if(grandpa == root)
+						{
+							root = parent;
+						}
+						
+						
+						return;
+					}
+				
+				}
+				
+				if(n == parent.leftChild)
+				{
+					if(parent == grandpa.leftChild)
+					{
+						System.out.println("case 3: " + n.toString());
+						grandpa.leftChild = parent.rightChild;
+						parent.rightChild = grandpa;
+						parent.parent = grandpa.parent;
+						parent.setBlack();
+						grandpa.parent = parent;
+						grandpa.setRed();
+						
+						if(grandpa == root)
+						{
+							root = parent;
+						}
+						
+						balance(grandpa);
+						return;
+					}
+				
+				}
+			
+			}
     		
     	}
     		
